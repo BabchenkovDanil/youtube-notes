@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Form
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -31,9 +31,18 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
     return{'access_token': access_token, 'token_type': 'bearer'}
 
 @router.post('/login', response_model=Token)
-def login(user_data: UserLogin, db: Depends(get_db)):
-    user = db.query(User).filter(User.mail == user_data.mail).first()
-    if not user or not verify_password(user_data.password, user.password):
+def login(
+        username: str = Form(...),
+        password: str = Form(...),
+        db: Session = Depends(get_db)
+):
+    print("=== LOGIN DEBUG ===")
+    print(f"username: {username}")
+    print(f"password: {password}")
+    print("===================")
+
+    user = db.query(User).filter(User.email == username).first()
+    if not user or not verify_password(password, user.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
@@ -45,7 +54,7 @@ def login(user_data: UserLogin, db: Depends(get_db)):
         'email': user.email,
         'login_time': datetime.now(timezone.utc).isoformat()
     })
-
+    print(f"✅ Session saved for user {user.id}")
 
     access_token = create_access_token(data={'sub': user.email})
     return {'access_token': access_token, 'token_type': 'bearer'}
@@ -53,4 +62,4 @@ def login(user_data: UserLogin, db: Depends(get_db)):
 @router.post('/logout')
 def logout(current_user: User = Depends(get_current_user)):
     delete_session(current_user.id)
-    return {'massage': 'Logged out successfully'}
+    return {'message': 'Logged out successfully'}

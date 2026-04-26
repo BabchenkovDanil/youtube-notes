@@ -29,7 +29,7 @@ def get_video_info(video_id: str) -> Optional[Dict]:
         'key': YOUTUBE_API_KEY
     }
     response = requests.get(url, params=params)
-    if response != 200:
+    if response.status_code != 200:
         return None
     data = response.json()
     if not data.get('items'):
@@ -37,7 +37,7 @@ def get_video_info(video_id: str) -> Optional[Dict]:
     video = data['items'][0]
     snippet = video['snippet']
     return {
-        'tittle': snippet.get('title', ''),
+        'title': snippet.get('title', ''),
         'description': snippet.get('description', ''),
-        'thumbnail': snippet.get('thumbnail', {}).get('high', {}).get('url', '')
+        'thumbnail': snippet.get('thumbnails', {}).get('high', {}).get('url', '')
     }

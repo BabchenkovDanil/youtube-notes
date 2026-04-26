@@ -14,7 +14,8 @@ from app.database import get_db
 from app.models import User
 from app.redis_client import get_session, refresh_session
 
-pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
+pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
+
 
 SECRET_KEY = 'mysecretkey'
 ALGORITHM = 'HS256'
@@ -23,6 +24,8 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl='/auth/login')
 
 def get_password_hash(password: str) -> str:
+    if len(password) > 72:
+        password = password[:72]
     return pwd_context.hash(password)
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -39,16 +42,23 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     return encoded_jwt
 
 def verify_token(token: str):
+    print("=== VERIFY_TOKEN DEBUG ===")
+    print(f"Token: {token[:50]}...")
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        print(f"Payload: {payload}")
         email: str = payload.get('sub')
+        print(f"Email from payload: {email}")
         if email is None:
             return None
         return email
-    except JWTError:
+    except JWTError as e:
+        print(f"JWTError: {e}")
         return None
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    print("=== GET_CURRENT_USER DEBUG ===")
+    print(f"Token: {token[:50]}...")
     email = verify_token(token)
     if email is None:
         raise HTTPException(
@@ -57,6 +67,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
             headers={"WWW-Authenticate": "Bearer"}
         )
     user = db.query(User).filter(User.email == email).first()
+    print(f"User found: {user.id if user else 'None'}")
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -64,6 +75,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         )
 
     session = get_session(user.id)
+    print(f"Session from Redis: {session}")
     if session is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

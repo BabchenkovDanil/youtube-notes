@@ -16,7 +16,7 @@ class Video(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     club_id = Column(String(50), nullable=False)
-    tittle = Column(String(255), nullable=False)
+    title = Column(String(255), nullable=False)
     description = Column(String)
     thumbnail = Column(String(255))
     created_at = Column(TIMESTAMP, server_default=func.now())
@@ -30,6 +30,7 @@ class Note(Base):
     timestamp = Column(Integer, nullable=False)
     video_id = Column(Integer, ForeignKey('videos.id'), nullable=False)
     owner_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    created_at = Column(TIMESTAMP, server_default=func.now())
 
     video = relationship('Video')
     user = relationship('User')

@@ -4,7 +4,8 @@ from sqlalchemy.orm import sessionmaker
 
 
 
-DATABASE_URL = 'postgresql://myuser:alopost@localhost:5432/mydb'
+DATABASE_URL = 'postgresql://myuser:testnotes@postgres:5432/mydb'
+
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
@@ -15,25 +16,3 @@ def get_db():
         yield db
     finally:
         db.close()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
